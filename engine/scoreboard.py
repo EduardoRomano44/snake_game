@@ -9,6 +9,8 @@ class Scoreboard:
         self.size = size
         self.font = font or self._load_default_font(font_size)
         self.background = self.sprites.get("scoreboard", size=self.size) if self.sprites.has_asset("scoreboard") else None
+        if self.background is not None:
+            self.background.set_alpha(160)
         self.rect = self.background.get_rect(topleft=self.position) if self.background else pygame.Rect(*self.position, *self.size)
         self.text_surf = None
         self.text_rect = None
