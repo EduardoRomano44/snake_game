@@ -16,13 +16,11 @@ class manager(Subject):
         self.player_count = player_count
         self.score = 0
         self.running = True
-        self.death_reason = None
 
     def stop(self):
         self.running = False
 
-    def finish(self, reason):
-        self.death_reason = reason
+    def finish(self, reasons):
         self.running = False
         self.notify(self.GAME_OVER, self)
 
@@ -56,25 +54,40 @@ class manager(Subject):
     def get_player_count(self):
         return self.player_count
 
+    def get_death_reasons(self):
+        return [snake.get_death_reason() for snake in self.map.get_snakes()]
+
+    def player_died(self, player=1):
+        return not self.map.get_snake(player).is_alive()
+
     def update_snake(self):
         snakes = self.map.get_snakes()
         food = self.map.get_food()
+        alldead = True
         for player, current_snake in enumerate(snakes, start=1):
-            current_snake.update()
-            death_reason = current_snake.is_dead()
-            if death_reason is None and self.map.is_snake_out_of_bounds(player):
-                death_reason = "Snake crashed against the wall"
-            if death_reason is None and self.map.is_snake_on_obstacle(player):
-                death_reason = "Snake crashed against an obstacle"
-            if death_reason is None and self.map.is_snake_on_snake(player):
-                death_reason = "Snake crashed against another player"
-            if death_reason is not None:
-                death_reason = f"Player {player}: {death_reason}"
-                self.finish(death_reason)
-                return death_reason
+            if current_snake.is_alive():
+                alldead = False
+                current_snake.update()
+                death_reason = current_snake.eating_self()
+                if death_reason is None and self.map.is_snake_out_of_bounds(player):
+                    death_reason = "Snake crashed against the wall"
+                if death_reason is None and self.map.is_snake_on_obstacle(player):
+                    death_reason = "Snake crashed against an obstacle"
+                if death_reason is None and self.map.is_snake_on_snake(player):
+                    death_reason = "Snake crashed against another player"
+                if death_reason is not None:
+                    death_reason = f"Player {player}: {death_reason}"
+                    current_snake.restore_previous_state()
+                    current_snake.set_death(death_reason)
+                    continue
 
-            if current_snake.try_eating(food.get_position()):
-                self.score += 1
-                self.map.get_food().set_position(self.map.get_free_position())
-                self.notify(self.SCORE_CHANGED, self)
+                if current_snake.try_eating(food.get_position()):
+                    self.score += 1
+                    self.map.get_food().set_position(self.map.get_free_position())
+                    self.notify(self.SCORE_CHANGED, self)
+
+        if alldead:
+            death_reasons = self.get_death_reasons()
+            self.finish(death_reasons)
+            return death_reasons
         return None

@@ -147,11 +147,11 @@ class artist:
         vintage_frame.blit(label, label_rect)
         return vintage_frame
     
-    def game_over(self, message, score):
+    def game_over(self, messages, score):
         self.draw_map("end")
-        messages = ["Game Over", message, f"Score: {score}", "Press Enter to exit"]
-        color = ["red", "white", "white", "gray"]
-        text_sizes = [40, 18, 22, 14]
+        text_sizes = [40] + [18 for i in range(0, len(messages))] + [22, 14]
+        color = ["red"] + ["white" for i in range(0, len(messages)+1)] + ["gray"]
+        messages = ["Game Over"] + messages + [f"Score: {score}", "Press Enter to exit"]
         for i in range(len(messages)):
             font = self.get_font(text_sizes[i])
             text_render = font.render(messages[i], True, color[i])

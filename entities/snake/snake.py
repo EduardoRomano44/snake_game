@@ -20,6 +20,9 @@ class snake(Entity):
         self.add_component(SnakeInputComponent, self.input)
         self.add_component(SnakeMovementComponent, self.movement)
         self.add_component(SnakeCollisionComponent, self.collision)
+        self.alive = True
+        self.death_reason = None
+        self._previous_state = None
 
     @property
     def size(self):
@@ -45,12 +48,45 @@ class snake(Entity):
     def try_eating(self, food_position):
         return self.collision.try_eating(food_position)
 
-    def is_dead(self):
+    def eating_self(self):
         if self.collision.is_self_colliding():
             return "Snake eats self"
         return None
 
+    def set_death(self, death_reason):
+        self.alive = False
+        self.death_reason = death_reason
+
+    def restore_previous_state(self):
+        if self._previous_state is None:
+            return
+
+        movement_state, input_state = self._previous_state
+        self.movement.direction, self.movement.size = movement_state[:2]
+        self.input.current_direction, self.input.next_direction = input_state
+
+        for segment, state in zip(self.movement.body, movement_state[2]):
+            (segment.position, segment.direction, segment.sprite, segment.turn_rotation) = state
+
+        self.render.update()
+        self._previous_state = None
+
+    def is_alive(self):
+        return self.alive
+
+    def get_death_reason(self):
+        return self.death_reason
+
+    def set_previous_state(self):
+        self._previous_state = ((
+                        self.movement.direction,
+                        self.movement.size,
+                        [(segment.position, segment.direction, segment.sprite, segment.turn_rotation) 
+                         for segment in self.movement.body]),
+                    (self.input.current_direction, self.input.next_direction))
+
     def update(self):
+        self.set_previous_state()
         self.input.update()
         self.movement.update()
         self.collision.update()

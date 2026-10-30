@@ -94,7 +94,7 @@ def run():
         clock.tick(15)
 
     playback()
-    artist.game_over(game.death_reason, game.get_score())
+    artist.game_over(game.get_death_reasons(), game.get_score())
     await_close()
     pygame.quit()
 
